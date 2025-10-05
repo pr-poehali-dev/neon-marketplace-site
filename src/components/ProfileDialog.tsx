@@ -28,6 +28,7 @@ interface ProfileDialogProps {
   products: Product[];
   onClose: () => void;
   onLogout: () => void;
+  onDeleteProduct: (productId: number) => void;
 }
 
 export default function ProfileDialog({
@@ -35,7 +36,8 @@ export default function ProfileDialog({
   currentUser,
   products,
   onClose,
-  onLogout
+  onLogout,
+  onDeleteProduct
 }: ProfileDialogProps) {
   if (!open || !currentUser) return null;
 
@@ -84,6 +86,14 @@ export default function ProfileDialog({
                         <p className="font-medium text-sm">{product.name}</p>
                         <p className="text-xs text-primary">{product.price.toLocaleString()} ₽</p>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDeleteProduct(product.id)}
+                        className="text-destructive hover:bg-destructive/10"
+                      >
+                        <Icon name="Trash2" size={18} />
+                      </Button>
                     </div>
                   ))
                 )}

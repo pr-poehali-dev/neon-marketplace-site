@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,12 +39,25 @@ interface Message {
 }
 
 export default function Index() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('currentUser');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('products');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed.map((p: any) => ({ ...p, createdAt: new Date(p.createdAt) }));
+    }
+    return [];
+  });
+  const [favorites, setFavorites] = useState<number[]>(() => {
+    const saved = localStorage.getItem('favorites');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -67,6 +80,18 @@ export default function Index() {
     seller: '',
     image: ''
   });
+
+  useEffect(() => {
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('products', JSON.stringify(products));
+  }, [products]);
+
+  useEffect(() => {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -123,17 +148,24 @@ export default function Index() {
       createdAt: new Date()
     };
 
-    setProducts([product, ...products]);
+    const updatedProducts = [product, ...products];
+    setProducts(updatedProducts);
     setNewProduct({ name: '', price: '', category: '', description: '', seller: '', image: '' });
     setDialogOpen(false);
   };
 
   const toggleFavorite = (productId: number) => {
-    if (favorites.includes(productId)) {
-      setFavorites(favorites.filter(id => id !== productId));
-    } else {
-      setFavorites([...favorites, productId]);
-    }
+    const updatedFavorites = favorites.includes(productId)
+      ? favorites.filter(id => id !== productId)
+      : [...favorites, productId];
+    setFavorites(updatedFavorites);
+  };
+
+  const handleDeleteProduct = (productId: number) => {
+    const updatedProducts = products.filter(p => p.id !== productId);
+    setProducts(updatedProducts);
+    const updatedFavorites = favorites.filter(id => id !== productId);
+    setFavorites(updatedFavorites);
   };
 
   const openChat = (product: Product) => {
@@ -367,6 +399,7 @@ export default function Index() {
           setCurrentUser(null);
           setProfileOpen(false);
         }}
+        onDeleteProduct={handleDeleteProduct}
       />
 
       <ChatDialog
